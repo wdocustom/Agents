@@ -125,6 +125,11 @@ class SocialOpportunity(BaseModel):
         elif self.platform == Platform.FACEBOOK and self.group_name:
             platform_info = self.group_name
 
+        # Build response section separately to avoid f-string nesting issues
+        response_section = ""
+        if self.suggested_response:
+            response_section = f"Suggested Response:\n{self.suggested_response}\n"
+
         return f"""
 OPPORTUNITY FOUND
 ================
@@ -142,6 +147,5 @@ Content Preview:
 Keywords: {', '.join(self.keywords_matched)}
 Omaha-Related: {'Yes' if self.is_omaha_related else 'No'}
 
-{f'Suggested Response:\n{self.suggested_response}\n' if self.suggested_response else ''}
-================
+{response_section}================
 """
