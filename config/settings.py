@@ -23,6 +23,22 @@ class Settings(BaseSettings):
     serper_api_key: Optional[str] = Field(None, description="Serper API key for Google search")
     openai_api_key: Optional[str] = Field(None, description="OpenAI API key (optional)")
 
+    # Social Media Credentials
+    reddit_client_id: Optional[str] = Field(None, description="Reddit API client ID")
+    reddit_client_secret: Optional[str] = Field(None, description="Reddit API client secret")
+    reddit_username: Optional[str] = Field(None, description="Reddit username")
+    reddit_password: Optional[str] = Field(None, description="Reddit password")
+
+    # Business Information
+    business_name: str = Field("Your Construction Company", description="Business name")
+    business_phone: Optional[str] = Field(None, description="Business phone number")
+    business_email: Optional[str] = Field(None, description="Business email")
+    business_website: Optional[str] = Field(None, description="Business website")
+    services: str = Field(
+        "tile work, bathroom remodeling, kitchen renovation, flooring",
+        description="Services offered (comma-separated)"
+    )
+
     # Target Location Settings
     target_city: str = Field("Omaha", description="Target city name")
     target_state: str = Field("NE", description="Target state abbreviation")
@@ -54,6 +70,11 @@ class Settings(BaseSettings):
 
     # Model Settings
     claude_model: str = Field("claude-sonnet-4-5-20250929", description="Claude model to use")
+
+    # Engagement Settings
+    auto_engage: bool = Field(False, description="Enable automatic engagement/commenting")
+    engagement_delay_min: int = Field(30, description="Minimum minutes between engagements")
+    engagement_daily_limit: int = Field(10, description="Maximum engagements per day")
 
     def get_target_coordinates(self) -> tuple[float, float]:
         """Get target location coordinates as (lat, lon) tuple."""

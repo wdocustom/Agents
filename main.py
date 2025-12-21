@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Main entry point for the Construction Lead Generation system.
+Main entry point for the Social Media Lead Monitoring system.
 
-This script runs the AI agents to discover, qualify, and manage
-construction leads in the Omaha, Nebraska area.
+This script monitors social media platforms (Reddit, Facebook) for construction
+service requests in Omaha, Nebraska.
 """
 
 import argparse
 import sys
 from pathlib import Path
 
-from agents.orchestrator import ConstructionLeadOrchestrator
+from agents.social_media_orchestrator import SocialMediaOrchestrator
 from config.settings import get_settings
 from utils.logger import setup_logging
 
@@ -18,41 +18,63 @@ from utils.logger import setup_logging
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description='AI-powered construction lead generation for Omaha, NE'
+        description='Social media lead monitoring for construction services in Omaha, NE',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Monitor Reddit only (recommended to start)
+  python main.py --mode monitor --platforms reddit
+
+  # Monitor continuously every 15 minutes
+  python main.py --mode monitor --continuous --interval 15
+
+  # Monitor with auto-engagement (WARNING: read docs first!)
+  python main.py --mode engage --platforms reddit
+
+  # Monitor specific platforms
+  python main.py --mode monitor --platforms reddit,facebook
+        """
     )
 
     parser.add_argument(
-        '--max-leads',
+        '--mode',
+        choices=['monitor', 'engage'],
+        default='monitor',
+        help='Mode: monitor only (safe) or engage (auto-comment, risky)'
+    )
+
+    parser.add_argument(
+        '--platforms',
+        type=str,
+        default='reddit',
+        help='Platforms to monitor (comma-separated): reddit,facebook'
+    )
+
+    parser.add_argument(
+        '--continuous',
+        action='store_true',
+        help='Run continuously with periodic checks'
+    )
+
+    parser.add_argument(
+        '--interval',
         type=int,
-        default=25,
-        help='Maximum number of leads to discover (default: 25)'
+        default=15,
+        help='Minutes between checks in continuous mode (default: 15)'
+    )
+
+    parser.add_argument(
+        '--hours-back',
+        type=int,
+        default=24,
+        help='Hours back to search (default: 24)'
     )
 
     parser.add_argument(
         '--min-score',
         type=int,
         default=60,
-        help='Minimum qualification score (0-100, default: 60)'
-    )
-
-    parser.add_argument(
-        '--output',
-        type=str,
-        default=None,
-        help='Output file path (default: auto-generated in ./output/)'
-    )
-
-    parser.add_argument(
-        '--no-enrich',
-        action='store_true',
-        help='Skip lead enrichment step'
-    )
-
-    parser.add_argument(
-        '--format',
-        choices=['csv', 'json', 'both'],
-        default='csv',
-        help='Output format (default: csv)'
+        help='Minimum relevance score (0-100, default: 60)'
     )
 
     parser.add_argument(
@@ -60,13 +82,6 @@ def parse_args():
         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
         default='INFO',
         help='Logging level (default: INFO)'
-    )
-
-    parser.add_argument(
-        '--radius',
-        type=float,
-        default=35.0,
-        help='Search radius in miles (default: 35)'
     )
 
     return parser.parse_args()
@@ -80,8 +95,6 @@ def main():
     settings = get_settings()
 
     # Override settings from args
-    if args.radius:
-        settings.target_radius_miles = args.radius
     if args.min_score:
         settings.min_lead_score = args.min_score
 
@@ -92,64 +105,95 @@ def main():
         log_to_console=True
     )
 
+    # Parse platforms
+    platforms = [p.strip().lower() for p in args.platforms.split(',')]
+
+    # Determine auto-engage
+    auto_engage = (args.mode == 'engage')
+
+    # Warnings
     print("="*70)
-    print("  CONSTRUCTION LEAD GENERATION SYSTEM")
-    print("  AI-Powered Lead Discovery for Omaha, Nebraska")
+    print("  SOCIAL MEDIA LEAD MONITORING SYSTEM")
+    print("  Construction Services - Omaha, Nebraska")
     print("="*70)
-    print(f"\nTarget Location: {settings.get_target_location_str()}")
-    print(f"Search Radius: {settings.target_radius_miles} miles")
-    print(f"Max Leads: {args.max_leads}")
-    print(f"Min Qualification Score: {settings.min_lead_score}/100")
-    print(f"Enrichment: {'Disabled' if args.no_enrich else 'Enabled'}")
-    print(f"Output Format: {args.format.upper()}")
+    print(f"\nMode: {args.mode.upper()}")
+    print(f"Platforms: {', '.join(platforms)}")
+    print(f"Min Relevance Score: {settings.min_lead_score}/100")
+
+    if auto_engage:
+        print("\n" + "!"*70)
+        print("  WARNING: AUTO-ENGAGEMENT ENABLED")
+        print("!"*70)
+        print("Auto-engagement may violate platform Terms of Service.")
+        print("You could be banned or suspended.")
+        print("Use at your own risk. Press Ctrl+C to cancel, or wait 5 seconds...")
+        print("!"*70)
+
+        import time
+        try:
+            for i in range(5, 0, -1):
+                print(f"\rStarting in {i}...  ", end='', flush=True)
+                time.sleep(1)
+            print("\rStarting now!       ")
+        except KeyboardInterrupt:
+            print("\n\nCancelled by user. Exiting.")
+            return 0
+
     print("="*70)
     print()
 
     try:
         # Initialize orchestrator
-        orchestrator = ConstructionLeadOrchestrator()
+        orchestrator = SocialMediaOrchestrator()
 
-        # Run lead generation
-        qualified_leads = orchestrator.run(
-            max_leads=args.max_leads,
-            enrich_leads=not args.no_enrich,
-            save_output=True
-        )
-
-        # Export in requested format
-        if args.format in ['json', 'both'] and qualified_leads:
-            json_file = orchestrator.export_to_json(args.output)
-            print(f"\n✓ JSON export saved: {json_file}")
-
-        # Get statistics
-        stats = orchestrator.get_lead_statistics()
-
-        # Print final summary
-        print("\n" + "="*70)
-        print("  FINAL RESULTS")
-        print("="*70)
-        print(f"Total Leads Discovered: {stats['total_discovered']}")
-        print(f"Qualified Leads: {stats['total_qualified']}")
-        print(f"Qualification Rate: {stats['qualification_rate']*100:.1f}%")
-        print(f"Average Lead Score: {stats['average_score']:.1f}/100")
-        print(f"Average Distance: {stats['average_distance']:.1f} miles")
-        if stats['total_estimated_value']:
-            print(
-                f"Total Estimated Project Value: "
-                f"${stats['total_estimated_value']:,.0f}"
+        if args.continuous:
+            # Run continuously
+            orchestrator.run_continuous(
+                platforms=platforms,
+                interval_minutes=args.interval,
+                auto_engage=auto_engage
             )
-        print("="*70)
-
-        if qualified_leads:
-            print(f"\n✓ Successfully generated {len(qualified_leads)} qualified leads!")
-            print(f"  Check the output directory for your results.")
-            return 0
         else:
-            print("\n⚠ No qualified leads found. Try:")
-            print("  - Increasing search radius (--radius)")
-            print("  - Lowering minimum score (--min-score)")
-            print("  - Increasing max leads (--max-leads)")
-            return 1
+            # Single run
+            opportunities = orchestrator.monitor(
+                platforms=platforms,
+                hours_back=args.hours_back,
+                auto_engage=auto_engage
+            )
+
+            # Print results
+            stats = orchestrator.get_statistics()
+
+            print("\n" + "="*70)
+            print("  FINAL RESULTS")
+            print("="*70)
+            print(f"Total Opportunities Found: {stats['total_opportunities']}")
+            print(f"Relevant Opportunities: {stats['relevant_opportunities']}")
+            print(f"Relevance Rate: {stats['relevance_rate']*100:.1f}%")
+            print(f"Average Relevance Score: {stats['average_relevance_score']:.1f}/100")
+            print(f"High-Priority Opportunities: {stats['high_priority_count']}")
+
+            if auto_engage:
+                print(f"\nEngagements Today: {stats['today_engagements']}")
+                print(f"Remaining Today: {stats['remaining_today']}")
+
+            print("="*70)
+
+            if opportunities:
+                print(f"\n✓ Found {len(opportunities)} relevant opportunities!")
+                print(f"  Check the output directory for detailed results.")
+                print(f"\n  Review opportunities in: output/opportunities_[timestamp].csv")
+                print(f"\n  To engage manually:")
+                print(f"    1. Review the CSV file")
+                print(f"    2. Open the URLs for high-scoring opportunities")
+                print(f"    3. Post the suggested responses (customize as needed)")
+                return 0
+            else:
+                print("\n⚠ No relevant opportunities found. Try:")
+                print("  - Checking different hours back (--hours-back 48)")
+                print("  - Lowering minimum score (--min-score 50)")
+                print("  - Running again later")
+                return 1
 
     except KeyboardInterrupt:
         print("\n\n⚠ Operation cancelled by user")

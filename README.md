@@ -1,145 +1,177 @@
-# Construction Lead Generation AI Agents
+# Social Media Lead Scraper for Construction Services
 
-AI-powered lead generation system specifically designed for construction companies targeting potential clients within 35 miles of Omaha, Nebraska.
+AI-powered social media monitoring system that finds potential clients looking for construction, remodeling, and tile work services in Omaha, Nebraska.
 
 ## Overview
 
-This system uses multiple AI agents working together to discover, qualify, and manage construction leads in the Omaha metropolitan area.
+This system monitors social media platforms (Reddit, Facebook groups, etc.) to find people actively looking for construction services in the Omaha area. It can either notify you of opportunities or automatically engage on your behalf.
 
 ## Features
 
-- **Geographic Targeting**: Automatically filters leads within 35-mile radius of Omaha, NE
-- **Multi-Agent System**: Coordinated agents for lead discovery, qualification, and enrichment
-- **Lead Scoring**: Intelligent scoring based on project size, timeline, and fit
-- **Data Enrichment**: Automatically gathers contact information and project details
-- **CRM Integration**: Export leads to CSV or integrate with your existing CRM
+- **Reddit Monitoring**: Scans subreddits for posts about home remodeling, tile work, construction
+- **Facebook Group Monitoring**: Monitors local Omaha groups for service requests
+- **Intelligent Keyword Detection**: Finds posts where people are asking for contractors
+- **Location Filtering**: Only shows opportunities in Omaha/surrounding areas
+- **AI-Powered Response Generation**: Creates personalized, natural responses
+- **Auto-Engagement** (optional): Can automatically comment on posts
+- **Real-time Notifications**: Get alerted when new opportunities are found
 
-## Agent Roles
+## Monitored Platforms
 
-1. **Lead Discovery Agent**: Searches for construction projects and opportunities
-2. **Lead Qualifier Agent**: Evaluates and scores leads based on criteria
-3. **Data Enrichment Agent**: Gathers additional information about prospects
-4. **Lead Manager Agent**: Organizes and exports qualified leads
+### Reddit
+- r/Omaha
+- r/HomeImprovement
+- r/DIY
+- r/Renovations
+- r/TileWork
+- r/Flooring
+- Custom subreddit list
+
+### Facebook
+- Omaha Buy/Sell/Trade groups
+- Omaha Home Improvement groups
+- Local neighborhood groups
+- Custom group list
+
+## Target Keywords
+
+The system looks for posts containing:
+- "looking for contractor"
+- "need tile work"
+- "bathroom remodel"
+- "kitchen renovation"
+- "flooring installation"
+- "handyman needed"
+- "contractor recommendations"
+- And 50+ more variations
 
 ## Installation
 
 ```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# Run setup script
+./setup.sh
 
-# Install dependencies
-pip install -r requirements.txt
-
-# Set up environment variables
+# Configure your settings
 cp .env.example .env
-# Edit .env with your API keys
+# Edit .env with your credentials and business info
 ```
 
 ## Configuration
 
-Edit `.env` file with your API keys:
+Edit `.env` to configure:
 
-```
-ANTHROPIC_API_KEY=your_key_here
-SERPER_API_KEY=your_key_here  # For Google search
-OPENAI_API_KEY=your_key_here  # Optional, for embeddings
+```bash
+# Your Business Information
+BUSINESS_NAME="Your Construction Company"
+BUSINESS_PHONE="(402) 555-1234"
+BUSINESS_EMAIL="info@yourcompany.com"
+BUSINESS_WEBSITE="https://yourcompany.com"
+SERVICES="tile work, bathroom remodeling, kitchen renovation, flooring"
+
+# Social Media Credentials (Reddit)
+REDDIT_CLIENT_ID=your_reddit_client_id
+REDDIT_CLIENT_SECRET=your_reddit_client_secret
+REDDIT_USERNAME=your_reddit_username
+REDDIT_PASSWORD=your_reddit_password
+
+# AI Configuration
+ANTHROPIC_API_KEY=your_anthropic_key
+
+# Target Location
+TARGET_CITY=Omaha
+TARGET_STATE=NE
+TARGET_RADIUS_MILES=35
+
+# Engagement Settings
+AUTO_ENGAGE=false  # Set to true to enable automatic commenting
+ENGAGEMENT_DELAY_MIN=30  # Minutes between engagements
+ENGAGEMENT_DAILY_LIMIT=10  # Max engagements per day
 ```
 
 ## Usage
 
-### Basic Usage
+### Monitor Only (Recommended)
 
 ```bash
-# Run the lead generation system
-python main.py
-
-# Run with custom parameters
-python main.py --max-leads 50 --output ./leads.csv
+# Monitor and report opportunities without auto-posting
+python main.py --mode monitor
 ```
 
-### Python API
+This will scan platforms, identify opportunities, and save them to `opportunities.csv` without posting.
 
-```python
-from agents.orchestrator import ConstructionLeadOrchestrator
+### Continuous Monitoring
 
-# Initialize the system
-orchestrator = ConstructionLeadOrchestrator(
-    target_location="Omaha, NE",
-    radius_miles=35
-)
-
-# Generate leads
-leads = orchestrator.run(max_leads=25)
-
-# Access qualified leads
-for lead in leads:
-    print(f"Company: {lead['company_name']}")
-    print(f"Score: {lead['score']}/100")
-    print(f"Project: {lead['project_type']}")
+```bash
+# Run continuously (checks every 15 minutes)
+python main.py --mode monitor --continuous --interval 15
 ```
 
-## Lead Sources
+### Platform-Specific Monitoring
 
-The system searches multiple sources:
-- Building permits and construction permits
-- Commercial real estate developments
-- Government contract opportunities
-- Local business expansions
-- Property development projects
+```bash
+# Reddit only
+python main.py --platforms reddit
 
-## Lead Qualification Criteria
+# Both platforms
+python main.py --platforms reddit,facebook
+```
 
-Leads are scored (0-100) based on:
-- **Project Size** (30 points): Budget and scope
-- **Timeline** (20 points): Project start date and urgency
-- **Location** (20 points): Distance from Omaha center
-- **Contact Quality** (15 points): Availability of decision-maker info
-- **Company Fit** (15 points): Type of construction needed
+## Important Warnings
+
+### ⚠️ Terms of Service Compliance
+
+**AUTO-ENGAGEMENT RISKS:**
+- May violate Reddit's automation rules
+- May violate Facebook's Terms of Service
+- Could result in account suspension or ban
+- **Use "monitor-only" mode to stay safe**
+
+**Recommended Approach:**
+1. Start with `--mode monitor` (no auto-posting)
+2. Manually review opportunities in the CSV output
+3. Manually engage to build authentic relationships
+4. Only use auto-engage if you fully understand the risks
+
+### Ethical Usage
+
+✅ **DO:**
+- Provide genuine, helpful responses
+- Only engage on truly relevant posts
+- Follow platform community guidelines
+
+❌ **DON'T:**
+- Spam irrelevant posts
+- Use deceptive practices
+- Over-promote your services
 
 ## Output Format
 
-Leads are exported with the following information:
-- Company name and contact information
-- Project type and description
-- Estimated budget and timeline
-- Location and distance from Omaha
-- Lead score and qualification notes
-- Discovery date and source
+Each opportunity found includes:
+- Platform (Reddit, Facebook)
+- Post title and content
+- Author and post URL
+- Location information
+- Keywords matched
+- Relevance score (0-100)
+- AI-generated suggested response
 
-## Directory Structure
+## How It Works
 
-```
-Agents/
-├── agents/                 # Agent implementations
-│   ├── lead_discovery.py  # Finds potential leads
-│   ├── lead_qualifier.py  # Qualifies and scores leads
-│   ├── data_enrichment.py # Enriches lead data
-│   └── orchestrator.py    # Coordinates all agents
-├── tools/                  # Agent tools
-│   ├── location_filter.py # Geographic filtering
-│   ├── web_search.py      # Web search capabilities
-│   └── data_parser.py     # Data extraction
-├── models/                 # Data models
-│   └── lead.py            # Lead data structure
-├── config/                 # Configuration
-│   └── settings.py        # System settings
-├── output/                 # Generated leads
-├── main.py                # Main entry point
-├── requirements.txt       # Python dependencies
-└── README.md             # This file
-```
+1. **Reddit Monitor** scans configured subreddits for new posts
+2. **Facebook Monitor** checks groups for relevant posts
+3. **Keyword Detector** uses AI to identify relevant posts
+4. **Location Filter** verifies posts are about Omaha area
+5. **Response Generator** creates personalized replies using Claude AI
+6. **Engagement Manager** handles posting (if enabled) with rate limiting
+7. **Report System** logs all opportunities for review
 
-## Requirements
+## Support & Legal
 
-- Python 3.9+
-- Internet connection for API access
-- API keys for Claude (Anthropic) and search services
-
-## Support
-
-For issues or questions about this lead generation system, please create an issue in the repository.
+- This tool finds legitimate business opportunities
+- Always follow platform Terms of Service
+- Manual engagement is safer than automation
+- You are responsible for your account actions
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT License - Use at your own risk. See LICENSE file.

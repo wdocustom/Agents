@@ -11,6 +11,12 @@ from .lead import (
     LeadSource,
 )
 
+from .opportunity import (
+    SocialOpportunity,
+    Platform,
+    OpportunityStatus,
+)
+
 __all__ = [
     'ConstructionLead',
     'ContactInfo',
@@ -20,4 +26,7 @@ __all__ = [
     'ProjectType',
     'LeadStatus',
     'LeadSource',
+    'SocialOpportunity',
+    'Platform',
+    'OpportunityStatus',
 ]
